@@ -1,4 +1,4 @@
-package com.codigo.msregisterhexagonal.infraestructure.adapters;
+package com.codigo.msregisterhexagonal.infraestructure.rest;
 
 import feign.Response;
 import feign.codec.ErrorDecoder;
@@ -10,18 +10,25 @@ public class CustomErrorDecoder implements ErrorDecoder {
 
     @Override
     public Exception decode(String methodKey, Response response) {
-        // Puedes verificar el código de estado HTTP y tomar decisiones sobre cómo manejar los errores
-        if (response.status() == HttpStatus.BAD_REQUEST.value()) {
-            return new RuntimeException("Error de solicitud incorrecta: " + response.request().url());
+        String url = response.request().url();
+        String message;
+        System.out.println(response.status());
+        switch (response.status()) {
+            case 400:
+                message = "Parametros incorrectos para el API manejado por errordecoder " + url;
+                break;
+            case 404:
+                message = "No existe el RUC en " + url;
+                break;
+            case 500:
+                message = "No se pudo procesar la petición manejado por errordecoder en " + url;
+                break;
+            case 422:
+                message = "Error de api reniec que devuelve 422 unprocesable entity";
+                break;
+            default:
+                message = "Error desconocido manejado por errordecoder: " + response.status() + " en " + url;
         }
-        if (response.status() == HttpStatus.NOT_FOUND.value()) {
-            return new RuntimeException("Recurso no encontrado: " + response.request().url());
-        }
-        if (response.status() == HttpStatus.INTERNAL_SERVER_ERROR.value()) {
-            return new RuntimeException("Error interno del servidor: " + response.request().url());
-        }
-
-        // Maneja otros casos de error según sea necesario
-        return new Exception("Error desconocido: " + response.status());
+        return new RuntimeException(message);
     }
 }
